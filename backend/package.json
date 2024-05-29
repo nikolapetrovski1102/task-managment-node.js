@@ -1,22 +1,24 @@
 {
-  "name": "nodejs",
+  "name": "my-project",
   "version": "1.0.0",
-  "description": "",
+  "description": "My Node.js project with a React frontend",
   "type": "module",
-  "main": "server.mjs",
   "scripts": {
-    "devStart": "nodemon server.mjs"
+    "devStart": "nodemon server.mjs",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "npm install && npm run build",
+    "build:server": "echo 'No specific build steps for the server. Adjust as necessary.'"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
     "express-session": "^1.18.0",
     "ioredis": "^5.4.1",
-    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.4.0",
     "pug": "^3.0.2",
     "redis": "^4.6.14",

@@ -2,10 +2,9 @@ import dotenv from 'dotenv';
 dotenv.config();
 import User from '../models/Users.mjs';
 import jwt from 'jsonwebtoken';
-import userDto from '../models/UserDTO.mjs';
 import Redis from "ioredis";
 
-const redisClient = new Redis(process.env.REDIS_URL); // Ensure REDIS_URL is in your .env file
+const redisClient = new Redis(process.env.REDIS_URL);
 
 const EXPIRATION = 3600;
 
@@ -36,15 +35,18 @@ export async function delete_user_by_id(req, res) {
 }
 
 export async function login(req, res) {
-    const { name, password } = req.body.user;
+    const { fullname, password } = req.body.user;
+
+    console.log(fullname);
+    console.log(password);
 
     try {
-        const user = await User.findOne({ name });
+        const user = await User.findOne({ fullname });
         if (!user || user.password !== password) {
             return res.status(401).send('Invalid credentials');
         }
 
-        const payload = { name: user.name, id: user._id };
+        const payload = { fullname: user.fullname, id: user._id };
 
         jwt.sign(payload, process.env.SECRET_KEY, { expiresIn: EXPIRATION }, async (err, token) => {
             if (err) {
@@ -53,7 +55,8 @@ export async function login(req, res) {
             }
             
             try {
-                await redisClient.set(`${name}_jwt`, token, 'EX', EXPIRATION);
+                process.env.USER = fullname;
+                await redisClient.set(`${fullname}_jwt`, token, 'EX', EXPIRATION);
             } catch (redisErr) {
                 console.error('Error setting token in Redis:', redisErr);
                 return res.status(500).send('Server Error');
@@ -73,9 +76,20 @@ export async function login(req, res) {
 
 
 export async function register(req, res) {
-    const { name, email, password } = req.body.user;
+    const { fullName, email, password, isActive, adminId, finishedTasks, currentTasks, role } = req.body.user;
 
-    const newUser = new User({ name, email, password });
+    console.log(fullName);
+
+    const newUser = new User({
+        fullname: fullName,
+        email: email,
+        password: password, 
+        isActive: isActive,
+        adminId: adminId,
+        finishedTasks: finishedTasks,
+        currentTasks: currentTasks,
+        role: role
+    });
 
     try {
         await newUser.save();

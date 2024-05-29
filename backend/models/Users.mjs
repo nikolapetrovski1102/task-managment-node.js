@@ -3,7 +3,7 @@ import { Schema, model } from 'mongoose';
 const roles = ['Super_Admin', 'Admin', 'User'];
 
 const UserSchema = new Schema({
-    Fullname: { type: String, required: true },
+    fullname: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     isActive: { type: Boolean, default: true, default: false },
