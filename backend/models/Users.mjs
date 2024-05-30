@@ -1,18 +1,74 @@
-import { Schema, model } from 'mongoose';
+import dotenv from 'dotenv';
+dotenv.config();
+import { Sequelize, DataTypes, Model } from 'sequelize'
 
-const roles = ['Super_Admin', 'Admin', 'User'];
+const env = process.env
 
-const UserSchema = new Schema({
-    fullname: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    isActive: { type: Boolean, default: true, default: false },
-    adminId: { type: Schema.Types.ObjectId, ref: 'User', required: false },
-    finishedTasks: { type: Number, default: 0 },
-    currentTasks: { type: Number, default: 0 },
-    role: { type: String, enum: roles, default: 'User' }
-}, {
-    timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' }
+const sequelize = new Sequelize(env.DATABASE, env.DATABASE_USER, env.DATABASE_PASSWORD, {
+    host: env.DATABASE_HOST,
+    dialect: env.DATABASE_DIALECT
 });
 
-export default model('User', UserSchema);
+const roles = ['Boss', 'Super_Admin', 'Admin', 'User'];
+
+class User extends Model {}
+
+User.init({
+    fullname: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    email: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true
+    },
+    password: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    isActive: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    adminId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: 'Users', // Name of the table in your database
+            key: 'id'
+        }
+    },
+    finishedTasks: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    },
+    currentTasks: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    },
+    role: {
+        type: DataTypes.ENUM(...roles),
+        defaultValue: 'User'
+    }
+}, {
+    sequelize,
+    modelName: 'User',
+    timestamps: true,
+    createdAt: 'createdDate',
+    updatedAt: 'updatedDate'
+});
+
+// Sync the model with the database
+// (async () => {
+//     try {
+//         await sequelize.authenticate();
+//         console.log('Connection has been established successfully.');
+//         await User.sync({ alter: true }); // Use { force: true } to drop and recreate the table, or { alter: true } to update it
+//         console.log('User model was synchronized successfully.');
+//     } catch (error) {
+//         console.error('Unable to connect to the database:', error);
+//     }
+// })();
+
+export default User;

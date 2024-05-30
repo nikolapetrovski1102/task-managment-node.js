@@ -1,14 +1,20 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import express, { json, urlencoded } from 'express';
-import { connect } from 'mongoose';
-import { index, delete_user_by_id, list_all_users, login, register } from './controllers/AuthController.mjs';
+import { delete_user_by_id, list_all_users, login, register } from './controllers/AuthController.mjs';
 import { create_task, list_all_tasks } from './controllers/TasksController.mjs';
 import jwt from 'jsonwebtoken';
-import Redis from "ioredis";
 import cors from 'cors'
+import http from 'http'
+import sql from 'mssql'
 
-const redisClient = new Redis(process.env.REDIS_URL);
+http.createServer(function(req, res) {
+    res.writeHead(200, {
+        'Content-Type': 'text/plain'
+    });
+    res.end('Hello, world!');
+}).listen(process.env.PORT);
+
 
 const app = express();
 
@@ -16,15 +22,12 @@ app.use(cors())
 app.use(json())
 app.use(urlencoded({ extended: true }))
 
-connect('mongodb://localhost:27017/local');
+
 
 app.set('view engine', 'ejs');
 
-const PORT = 8081;
-
-app.get('/index', authenticateToken, index)
-app.get('/delete_user_by_id/:id', delete_user_by_id)
-app.get('/list_all_users', authenticateToken, list_all_users)
+app.post('/delete_user_by_id/:id', delete_user_by_id)
+app.get('/list_all_users', list_all_users)
 app.post('/login', login)
 app.post('/register', register)
 app.post('/createTask', authenticateToken, create_task)
@@ -55,4 +58,4 @@ async function authenticateToken(req, res, next) {
 }
 
 
-app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+app.listen(8081, () => console.log(`Server is running on port ${8081}`));

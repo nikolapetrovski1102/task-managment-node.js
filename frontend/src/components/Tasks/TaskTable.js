@@ -42,7 +42,6 @@ const MyTable = () => {
 
   useEffect(() => {
     const fetchTasks = async () => {
-      console.log(token);
       try {
         const response = await axios.get('http://localhost:8081/listTasks', {
           headers: {
