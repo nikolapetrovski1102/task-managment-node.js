@@ -12,6 +12,7 @@ const sequelize = new Sequelize(env.DATABASE, env.DATABASE_USER, env.DATABASE_PA
 
 const priority = ['P0', 'P1', 'P2', 'P3'];
 const projects = ['Hello Help Me', 'Nikob', 'Axiom', 'Balkanea', 'ASK', 'Paragon', 'Reptil', 'Salesforce'];
+const status = ['Finished', 'In progress', 'On hold', 'Not started'];
 
 class Task extends Model {}
 
@@ -57,14 +58,20 @@ Task.init({
         validate: {
             isIn: [projects]
         }
-    }
+    },
+    status: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        validate: {
+            isIn: [status]
+        }
+    },
 }, {
     sequelize,
     modelName: 'Task',
     timestamps: true
 });
 
-// Sync the model with the database
 // (async () => {
 //     try {
 //         await sequelize.authenticate();

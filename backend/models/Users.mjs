@@ -35,7 +35,7 @@ User.init({
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
-            model: 'Users', // Name of the table in your database
+            model: 'Users',
             key: 'id'
         }
     },
@@ -59,7 +59,6 @@ User.init({
     updatedAt: 'updatedDate'
 });
 
-// Sync the model with the database
 // (async () => {
 //     try {
 //         await sequelize.authenticate();

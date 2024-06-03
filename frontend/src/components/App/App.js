@@ -1,18 +1,21 @@
-import { Route, Router, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import './App.css';
-import Auth from '../Authorization/Auth'
-import Tasks from '../Tasks/TaskTable'
-import Header from '../Header/Header'
-import SideHeader from '../Header/SideHeader'
+
+import Auth from '../Authorization/Authorization'
+import TasksTable from '../Tasks/Table/TaskTable'
+
+import EditTask from '../Tasks/Operations/TaskEdit/TaskEdit'
+import TaskAdd from '../Tasks/Operations/TaskAdd/TaskAdd';
 
 function App() {
   return (
     <div>
-      <Header />
-      <SideHeader />
       <Routes>
-        <Route path='/' element={<Auth />} />
-        <Route path='/tasks' element={<Tasks />} ></Route>
+        <Route path="/" element={<Auth />} />
+        <Route path='/tasks' element={<TasksTable />} />
+        <Route path='/task/edit/:id' element={<EditTask />} />
+        <Route path='/task/:id' element={<TasksTable />} />
+        <Route path='/task/add' element={<TaskAdd />} />
       </Routes>
     </div>
   );

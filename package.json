@@ -1,0 +1,16 @@
+{
+    "name": "frontend-backend",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "start": "concurrently \"npm run frontend\" \"npm run backend\"",
+        "frontend": "cd frontend && npm run start",
+        "backend": "cd backend && npm run devStart",
+        "build": "cd frontend && react-scripts build",
+        "test": "cd frontend && react-scripts test",
+        "eject": "cd frontend && react-scripts eject"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}

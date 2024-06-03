@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import express, { json, urlencoded } from 'express';
 import { delete_user_by_id, list_all_users, login, register } from './controllers/AuthController.mjs';
-import { create_task, list_all_tasks } from './controllers/TasksController.mjs';
+import { create_task, get_task_by_id, list_all_tasks, list_tasks_by_user } from './controllers/TasksController.mjs';
 import jwt from 'jsonwebtoken';
 import cors from 'cors'
 import http from 'http'
@@ -32,6 +32,8 @@ app.post('/login', login)
 app.post('/register', register)
 app.post('/createTask', authenticateToken, create_task)
 app.get('/listTasks', authenticateToken, list_all_tasks)
+app.get('/listTasksByUser', authenticateToken, list_tasks_by_user)
+app.get('/getTask/:id', authenticateToken, get_task_by_id)
 
 async function authenticateToken(req, res, next) {
     const authHeader = req.headers.authorization;

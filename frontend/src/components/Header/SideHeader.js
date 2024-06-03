@@ -1,46 +1,29 @@
-function SideHeader () {
-    return (
-        <div id="page">
-        <div id="header" class="site-header">
-            <div class="wrap">
- 
-                <div id="branding" role="banner">
-                    <p class="site-title"><a href="http://example.com">Site Title</a></p>
-                    <p class="site-description">Just another WordPress site...</p>
-                </div>
- 
-            </div>
-        </div>
- 
-        {/* <div id="main">
-            <div class="wrap">
- 
-                <div id="primary">
-                    <div id="content" role="main">
-                        <p>Article content...</p>
-                    </div>
-                </div>
- 
-                <div id="secondary">
-                    <div class="widget">
-                        <p>Sidebar content...</p>
-                    </div>
-                </div>
- 
-            </div>
-        </div>
- 
-        <div id="footer" class="site-footer">
-            <div class="wrap">
- 
-                <p class="site-credits">© Copyright owner</p>
- 
-            </div>
-        </div>
- 
-    </div> */}
+// src/components/Sidebar.js
+
+import React from 'react';
+import './Sidebar.css';
+
+function Sidebar() {
+  return (
+    <div className="sidebar">
+      <div className="brand">
+        <img src="/path-to-logo.png" alt="Promage Logo" />
+        <h1>Promage</h1>
+      </div>
+      <button className="create-project-btn">Create new project</button>
+      <nav>
+        <ul>
+          <li>Dashboard</li>
+          <li>Projects</li>
+          <li>Tasks</li>
+          <li>Time log</li>
+          <li>Resource mgmt</li>
+          <li>Users</li>
+          <li>Project template</li>
+        </ul>
+      </nav>
     </div>
-    )
+  );
 }
 
-export default SideHeader;
+export default Sidebar;
