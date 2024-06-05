@@ -7,15 +7,16 @@ import TaskAdd from './TaskAddForm';
 const { Header, Sider } = Layout;
 
 
+
 const items1 = [
-    {
-        key: '1',
-        label: 'Active tasks',
-    },
-    {
-        key: '2',
-        label: 'Completed tasks',
-    },
+  {
+      key: '1',
+      label: <a href='/tasks' >Active tasks</a>,
+  },
+  {
+      key: '2',
+      label: 'Completed tasks',
+  },
 ]
   
   const items2 = [

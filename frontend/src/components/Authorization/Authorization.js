@@ -6,30 +6,29 @@ import logo from '../../images/Logo.png';
 
 const { Header, Sider } = Layout;
 
-const items1 = ['1', '2', '3'].map((key) => ({
-  key,
-  label: `nav ${key}`,
-}));
 
-const items2 = [UserOutlined, LaptopOutlined, NotificationOutlined].map((icon, index) => {
-  const key = String(index + 1);
-  return {
-    key: `sub${key}`,
-    icon: React.createElement(icon),
-    label: `Profile ${key}`,
-    children: new Array(4).fill(null).map((_, j) => {
-      const subKey = index * 4 + j + 1;
-      return {
-        key: subKey,
-        label: `option${subKey}`,
-      };
-    }),
-  };
-});
+const items2 = [
+  {
+    key: 'sub1',
+    icon: React.createElement(UserOutlined),
+    label: 'Profile',
+    children: [
+    ],
+  },
+  {
+    key: 'sub2',
+    icon: React.createElement(LaptopOutlined),
+    label: 'Team',
+    children: [
+    ],
+  },
+];
+
 const App = () => {
   const {
     token: { colorBgContainer },
   } = theme.useToken();
+  
   return (
     <Layout>
       <Header
@@ -43,7 +42,6 @@ const App = () => {
           theme="dark"
           mode="horizontal"
           defaultSelectedKeys={['2']}
-          // items={items1}
           style={{
             flex: 1,
             minWidth: 0,
@@ -54,12 +52,12 @@ const App = () => {
         <Sider
           width={200}
           style={{
-            background: colorBgContainer,
+            background: '#141414',
           }}
         >
           <Menu
+            disabled={true}
             mode="inline"
-            defaultSelectedKeys={['1']}
             defaultOpenKeys={['sub1']}
             style={{
               height: '100%',

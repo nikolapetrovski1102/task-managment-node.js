@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useHistory, useNavigate } from 'react-router-dom';
-import { ExclamationCircleFilled, ReloadOutlined } from '@ant-design/icons';
-import { Divider, Table, Button, Input } from 'antd';
-import { Breadcrumb, Layout, theme, Modal } from 'antd';
+import { renderMatches, useHistory, useNavigate } from 'react-router-dom';
+import { ExclamationCircleFilled, ReloadOutlined, DownOutlined } from '@ant-design/icons';
+import { Breadcrumb, Layout, theme, Modal, Divider, Table, Button, Input, Spin, Tag, Avatar, Dropdown, Space } from 'antd';
 import axios from 'axios';
 
 const { Content } = Layout;
@@ -17,15 +16,14 @@ const columns = [
   {
     title: 'Task Name',
     dataIndex: 'taskName',
-    render: (text) => <a>{text}</a>,
-  },
-  {
-    title: 'Due Date',
-    dataIndex: 'dueDate',
   },
   {
     title: 'Priority',
     dataIndex: 'priority',
+  },
+  {
+    title: 'Due Date',
+    dataIndex: 'dueDate',
   },
   {
     title: 'Project',
@@ -37,12 +35,67 @@ const columns = [
   }
 ];
 
-const initData = [];
-
 const App = () => {
 
+  const task_statuses = [
+    {
+      label: <a href="https://www.antgroup.com">1st menu item</a>,
+      key: '0',
+    },
+    {
+      label: <a href="https://www.aliyun.com">2nd menu item</a>,
+      key: '1',
+    },
+    {
+      type: 'divider',
+    },
+    {
+      label: '3rd menu item',
+      key: '3',
+    },
+  ];
+
+  const getColor = (priority) => {
+    switch (priority) {
+      case 'P0':
+        return 'red';
+      case 'P1':
+        return 'volcano';
+      case 'P2':
+        return 'gold';
+      case 'P3':
+        return 'green';
+      default:
+        return 'blue';
+    }
+  };
+
+  const getProject = (project) => {
+    switch (project) {
+      case 'Hello Help Me':
+        return 'https://ohanaone.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10415?size=medium';
+      case 'Axiom':
+        return 'https://ohanaone.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10419?size=medium';
+      case 'Salesforce':
+        return 'https://ohanaone.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10423?size=medium';
+      case 'Reptil':
+        return 'https://ohanaone.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10414?size=medium';
+      case 'Nikob':
+        return 'https://ohanaone.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10401?size=medium';
+      case 'Balkanea':
+        return 'https://ohanaone.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10425?size=medium';
+      case 'ASK':
+        return 'https://ohanaone.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10402?size=medium';
+      case 'Paragon':
+        return 'https://ohanaone.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=medium';
+      default:
+        return ''
+    }
+  };
+
   useEffect(() => {
-    axios.get('http://localhost:8081/listTasksByUser', {
+    setLoading(true);
+    axios.get('http://cyberlink-001-site33.atempurl.com/listTasksByUser', {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('access_token')}`
       }
@@ -50,17 +103,27 @@ const App = () => {
       console.log('Response data:', response.data);
 
       const tasks = response.data.tasks.map((task) => ({
+        proba: task.priority == 'P0' ? 'Priority' : '',
         key: task.id,
         taskName: task.name,
-        dueDate: task.dueDate,
-        priority: task.priority,
-        project: task.project,
-        status: task.status,
+        dueDate: task.dueDate.split('T')[0],
+        priority: <Tag color={getColor(task.priority)}>{task.priority}</Tag>,
+        project:  <p style={{ marginBottom: '0' }} > <Avatar style={{ marginBottom: '1px' }} size={'small'} src={getProject(task.project)} ></Avatar> {task.project} </p>,
+        status: task.status
       }));
 
+      console.log(tasks);
+
       setData(tasks);
+      setLoading(false);
     }).catch((error) => {
       console.log(error);
+      if (error.response.status === 403) {
+        if (localStorage.getItem('access_token'))
+          localStorage.removeItem('access_token');
+        navigate('/');
+      setLoading(false);
+      }
     });
   }, []);
 
@@ -74,10 +137,11 @@ const App = () => {
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [modalText, setModalText] = useState('Content of the modal');
   const [loadings, setLoadings] = useState([]);
-  const [data, setData] = useState(initData);
+  const [data, setData] = useState([]);
   const [selectedRowEdit, setSelectedRowEdit] = useState(null);
   const [editDsiabled, setEditDisable] = useState(true);
   const [deleteDisabled, setDeleteDisable] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Disable buttons when no row is selected
   window.onload = function() {
@@ -86,9 +150,59 @@ const App = () => {
   };
   // end disable buttons
 
+  // Loading button
+  const enterLoading = (index) => {
+    // Start the loader
+    setLoadings( (prevLoadings) => {
+      const newLoadings = [...prevLoadings];
+      newLoadings[index] = true;
+      return newLoadings;
+    })
+
+    axios.get('http://cyberlink-001-site33.atempurl.com/listTasksByUser', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+      }
+    }).then((response) => {
+
+      const tasks = response.data.tasks.map((task) => ({
+        key: task.id,
+        taskName: task.name,
+        dueDate: task.dueDate.split('T')[0],
+        priority: <Tag color={getColor(task.priority)}>{task.priority}</Tag>,
+        project: <p> <Avatar style={{ marginBottom: '3px', marginRight: '5px' }} size={'small'} src={'https://ohanaone.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10415?size=medium'} ></Avatar> task.project </p>,
+        status: task.status,
+      }));
+
+      setData(tasks);
+      // After the data is fetched, stop the loader
+      setLoadings((prevLoadings) => {
+            const newLoadings = [...prevLoadings];
+            newLoadings[index] = false;
+            return newLoadings;
+      });
+    }).catch((error) => {
+      console.log(error);
+      if (error.response.status === 403) {
+        if (localStorage.getItem('access_token'))
+          localStorage.removeItem('access_token');
+        navigate('/');
+      }
+      // If there is an error, stop the loader
+      setLoadings((prevLoadings) => {
+            const newLoadings = [...prevLoadings];
+            newLoadings[index] = false;
+            return newLoadings;
+      });
+    });
+
+  };
+  // end loading button
+
   // Search bar
   const onSearch = (value) => {
-    const filtered = initData.filter((item) =>
+    if (value === '') enterLoading(2);
+    const filtered = data.filter((item) =>
       item.taskName.toLowerCase().includes(value.toLowerCase())
     );
     setData(filtered);
@@ -106,8 +220,24 @@ const App = () => {
       okText: 'Yes',
       okType: 'danger',
       cancelText: 'No',
-      onOk() {
+      async onOk() {
 
+        const ids = selectedRow.map((item) => item.key);
+
+          try {
+            const response = await axios.post(`http://cyberlink-001-site33.atempurl.com/deleteTasks/`,
+              ids,
+              {
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                },
+            });
+            console.log(response);
+            if (response.status === 200)
+              enterLoading(2)
+          } catch (error) {
+            console.error('Error deleting task:', error);
+          }
       },
       onCancel() {
       },
@@ -162,23 +292,6 @@ const App = () => {
   };
   // end edit button
 
-  // Loading button
-  const enterLoading = (index) => {
-    setLoadings((prevLoadings) => {
-      const newLoadings = [...prevLoadings];
-      newLoadings[index] = true;
-      return newLoadings;
-    });
-    setTimeout(() => {
-      setLoadings((prevLoadings) => {
-        const newLoadings = [...prevLoadings];
-        newLoadings[index] = false;
-        return newLoadings;
-      });
-    }, 6000);
-  };
-  // end loading button
-
 
   return (
     <Layout
@@ -213,7 +326,7 @@ const App = () => {
           </Button>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <Button disabled={editDsiabled} id='edit_btn' type="primary" onClick={showModal}>
+          <Button disabled={editDsiabled} id='edit_btn' type="primary" onClick={ () => navigate(`/task/edit/${selectedRow[0].key}`)}>
             Edit
           </Button>
           <Modal
@@ -247,6 +360,7 @@ const App = () => {
       }}
     >
     <div>
+    <Spin spinning={loading} size='large' tip='Loading data..'>
       <Table
         rowSelection={{
           type: selectionType,
@@ -259,7 +373,7 @@ const App = () => {
         onRow={(record) => {
           return {
             onDoubleClick: () => {
-              navigate("/task/edit/" + record.key);
+              navigate(`/task/details/${record.key}`);
             },
             onClick: () => {
               setSelectedRow(record.key);
@@ -276,6 +390,7 @@ const App = () => {
         }}
 
       />
+      </Spin>
     </div>
     </Content>
     </Layout>

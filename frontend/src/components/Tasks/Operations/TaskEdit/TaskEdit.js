@@ -7,10 +7,16 @@ import TaskFrom from './TaskEditForm';
 const { Header, Sider } = Layout;
 
 
-const items1 = ['1', '2', '3'].map((key) => ({
-    key,
-    label: `nav ${key}`,
-  }));
+const items1 = [
+  {
+      key: '1',
+      label: <a href='/tasks' >Active tasks</a>,
+  },
+  {
+      key: '2',
+      label: 'Completed tasks',
+  },
+]
   
   const items2 = [
     {
@@ -53,7 +59,7 @@ const {
       <Menu
         theme="dark"
         mode="horizontal"
-        defaultSelectedKeys={['2']}
+        defaultSelectedKeys={['1']}
         items={items1}
         style={{
           flex: 1,
@@ -72,7 +78,6 @@ const {
         <Menu
           mode="inline"
           defaultSelectedKeys={['1']}
-          defaultOpenKeys={['sub1']}
           style={{
             height: '100%',
             borderRight: 0,

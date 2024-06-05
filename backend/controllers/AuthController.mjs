@@ -16,29 +16,22 @@ export async function delete_user_by_id(req, res) {
 }
 
 export async function login(req, res) {
-    
-    const { email, password } = req.body.user;
-
-    console.log(`${email}  ${password}`);
+    const { email, password, remember_me } = req.body.user;
 
     try {
-        const userToken = await userService.login(email, password);
-
+        const userToken = await userService.login(email, password, remember_me);
         if (!userToken) {
             return res.status(401).send('Invalid credentials');
         }
-
         return res.send({
             access_token: userToken,
             token_type: 'Bearer',
-            expires_in: process.env.TOKEN_EXPIRATION
+            expires_in: remember_me ? process.env.TOKEN_EXPIRATION_REMEMBER_ME : process.env.TOKEN_EXPIRATION
         });
-
     } catch (err) {
         console.error('Error signing token:', err);
         return res.status(500).send('Server Error');
     }
-
 }
 
 
@@ -73,6 +66,13 @@ export async function list_all_users(req, res) {
         res.status(500).send('Server Error');
     }
 
+}
 
-
+export async function logout(req, res) {
+    try {
+        await userService.logout(req.body.token);
+        res.send('User has been logged out');
+    } catch (err) {
+        res.status(500).send('Server Error');
+    }
 }
