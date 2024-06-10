@@ -46,6 +46,7 @@ const FormDisabledDemo = () => {
   const [assignTo, setAssignTo] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [description, setDescription] = useState('');
+  const [currentEnvironment, setCurrentEnvironment] = useState('');
   const [file, setFile] = useState(null);
   const [spinning, setSpinning] = React.useState(false);
   const [percent, setPercent] = React.useState(0);
@@ -67,20 +68,22 @@ const FormDisabledDemo = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(`http://cyberlink-001-site33.atempurl.com/getTask/${id}`, {
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/getTask/${id}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('access_token')}`
           }
         });
-        console.log(response);
-        setTask(response.data.task);
-        setAssignTo(response.data.task.assignedTo);
-        setDueDate(response.data.task.dueDate.split('T')[0]);
-        setTaskPriority(response.data.task.priority);
-        setTaskName(response.data.task.name);
-        setDescription(response.data.task.description);
-        setStatus(response.data.task.status);
-        setProject(response.data.task.project);
+        const response_data = response.data.task;
+
+        setTask(response_data);
+        setAssignTo(response_data.assignedTo);
+        setDueDate(response_data.dueDate != null ? response_data.dueDate.split('T')[0] : null);
+        setTaskPriority(response_data.priority);
+        setTaskName(response_data.name);
+        setDescription(response_data.description);
+        setStatus(response_data.status);
+        setProject(response_data.project);
+        setCurrentEnvironment(response_data.currentEnvironment);
       } catch (error) {
         console.log(error);
       }
@@ -88,7 +91,7 @@ const FormDisabledDemo = () => {
 
     const fetchUsers = async () => {
       try {
-        const response = await axios.get('http://cyberlink-001-site33.atempurl.com/list_all_users', {
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/list_all_users`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
@@ -119,11 +122,12 @@ const saveTaskPost = async () => {
     assignedFrom: localStorage.getItem('access_token'),
     description: description,
     file: file,
+    currentEnvironment: currentEnvironment
   };
 
   try {
     const response = await axios.post(
-      `http://cyberlink-001-site33.atempurl.com/updateTask/${id}`,
+      `${process.env.REACT_APP_API_URL}/updateTask/${id}`,
       task,
       {
         headers: {
@@ -158,10 +162,17 @@ const saveTaskPost = async () => {
       <Breadcrumb.Item>{id}</Breadcrumb.Item>
     </Breadcrumb>
     <Divider style={{ margin: '-.5% 0 1% 0' }} />
-    <div>
-    <Button onClick={ () => navigate('/tasks') } style={{ marginBottom: '1%' }} type="primary">
-         back
-      </Button>
+    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '-.5%'}}>
+      <div>
+      <Button onClick={ () => navigate('/tasks') } type="primary">
+          back
+        </Button>
+      </div>
+      <div style={{ display: 'flex', gap: '8px' }}>
+      <Form.Item style={{ alignContent: 'center' }} >
+            <Button onClick={saveTaskPost} >Save</Button>
+      </Form.Item>
+      </div>
     </div>
     <Content
       style={{
@@ -245,8 +256,15 @@ const saveTaskPost = async () => {
         ))}
       </Select>
         </Form.Item>
+        <Form.Item label="Current Environment" >
+          <Select value={currentEnvironment} onSelect={(value) => setTimeout(() => setCurrentEnvironment(value), 200)} >
+            <Select.Option value="Local">Local</Select.Option>
+            <Select.Option value="Production">Production</Select.Option>
+            <Select.Option value="Stage">Stage</Select.Option>
+          </Select>
+        </Form.Item>
         <Form.Item label="Due Date">
-          <DatePicker defaultValue={dayjs(dueDate.toString())} />
+          <DatePicker defaultValue={dayjs(dueDate)} />
         </Form.Item>
         <Form.Item label="Description">
           <TextArea value={ description } onInput={ (e) => setDescription(e.target.value)} rows={5} />
@@ -270,9 +288,6 @@ const saveTaskPost = async () => {
               </div>
             </button>
           </Upload>
-        </Form.Item>
-        <Form.Item style={{ alignContent: 'center' }} >
-          <Button onClick={saveTaskPost} >Save</Button>
         </Form.Item>
       </Form>
       <Spin spinning={spinning} percent={percent} fullscreen />

@@ -1,7 +1,6 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import User from '../models/Users.mjs';
-import jwt from 'jsonwebtoken';
 import UserService from '../service/user.service.js'
 
 const userService = new UserService();
@@ -16,22 +15,27 @@ export async function delete_user_by_id(req, res) {
 }
 
 export async function login(req, res) {
+    
     const { email, password, remember_me } = req.body.user;
 
     try {
         const userToken = await userService.login(email, password, remember_me);
+
         if (!userToken) {
             return res.status(401).send('Invalid credentials');
         }
+
         return res.send({
             access_token: userToken,
             token_type: 'Bearer',
-            expires_in: remember_me ? process.env.TOKEN_EXPIRATION_REMEMBER_ME : process.env.TOKEN_EXPIRATION
+            expires_in: remember_me == false ? process.env.TOKEN_EXPIRATION : process.env.TOKEN_EXPIRATION_REMEMBER_ME
         });
+
     } catch (err) {
         console.error('Error signing token:', err);
         return res.status(500).send('Server Error');
     }
+
 }
 
 
@@ -75,4 +79,31 @@ export async function logout(req, res) {
     } catch (err) {
         res.status(500).send('Server Error');
     }
+}
+
+export async function checkUserRole(req, res) {
+
+    const user_token = req.headers.authorization.split(' ')[1];
+
+    const user_role = await userService.get_user_role(user_token);
+
+    if (user_role) return res.send(user_role);
+
+}
+
+export async function get_user_by_token(req, res) {
+
+    const user_token = req.headers.authorization.split(' ')[1];
+
+    const user = await userService.get_user_by_redis_token(user_token);
+
+    console.log(user);
+
+    if (user){
+        return res.status(200).send(user);
+    } 
+    else{
+        return res.status(500);
+    }
+
 }

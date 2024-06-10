@@ -1,129 +1,119 @@
 import React from 'react';
-import AppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
-import Toolbar from '@mui/material/Toolbar';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
-import Badge from '@mui/material/Badge';
-import MenuIcon from '@mui/icons-material/Menu';
-import SearchIcon from '@mui/icons-material/Search';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import AccountCircle from '@mui/icons-material/AccountCircle';
-import MoreIcon from '@mui/icons-material/MoreVert';
-import { alpha, styled } from '@mui/material/styles';
-import InputBase from '@mui/material/InputBase';
+import { LaptopOutlined, UserOutlined } from '@ant-design/icons';
+import { Layout, Menu, theme, Tag } from 'antd';
+import logo from '../../images/Logo.png'
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+const { Header, Sider } = Layout;
 
-const Search = styled('div')(({ theme }) => ({
-  position: 'relative',
-  borderRadius: theme.shape.borderRadius,
-  backgroundColor: alpha(theme.palette.common.white, 0.15),
-  '&:hover': {
-    backgroundColor: alpha(theme.palette.common.white, 0.25),
+
+const items1 = [
+  {
+      key: '1',
+      label: <a href='/tasks' >Active tasks</a>,
   },
-  marginRight: theme.spacing(2),
-  marginLeft: 0,
-  width: '100%',
-  [theme.breakpoints.up('sm')]: {
-    marginLeft: theme.spacing(3),
-    width: 'auto',
+  {
+      key: '2',
+      label: <a href='/completed/tasks' >Completed tasks</a>,
   },
-}));
+]
 
-const SearchIconWrapper = styled('div')(({ theme }) => ({
-  padding: theme.spacing(0, 2),
-  height: '100%',
-  position: 'absolute',
-  pointerEvents: 'none',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-}));
+const App = () => {
 
-const StyledInputBase = styled(InputBase)(({ theme }) => ({
-  color: 'inherit',
-  '& .MuiInputBase-input': {
-    padding: theme.spacing(1, 1, 1, 0),
-    paddingLeft: `calc(1em + ${theme.spacing(4)})`,
-    transition: theme.transitions.create('width'),
-    width: '100%',
-    [theme.breakpoints.up('md')]: {
-      width: '20ch',
+  const navigate = useNavigate();
+
+  const [users, setUsers] = useState([]);
+
+  useEffect( () => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get('http://cyberlink-001-site33.atempurl.com/list_all_users', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        setUsers(response.data);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+    fetchUsers();
+  }, [])
+
+  const Logout = async () => {
+    localStorage.removeItem('access_token');
+    navigate('/')
+  }
+
+  const items2 = [
+    {
+      key: 'sub1',
+      icon: React.createElement(UserOutlined),
+      label: 'Profile',
+      children: [
+        { key: '1', label: <a onClick={Logout} >Logout</a> },
+        { key: '2', label: 'Details' },
+      ],
     },
-  },
-}));
+    {
+      key: 'sub2',
+      icon: React.createElement(LaptopOutlined),
+      label: 'Team',
+      children: [
+        ...users.map(user => ({ key: `user-${user.id}`, label: user.fullname }))
+      ],
+    },
+  ];
 
-function Header({ handleProfileMenuOpen, handleMobileMenuOpen, menuId, mobileMenuId, renderMobileMenu, renderMenu }) {
+  const {
+    token: { colorBgContainer },
+  } = theme.useToken();
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static">
-        <Toolbar
-          sx={{ width: '100%', backgroundColor: '#ebdfd7' }}
+    <Layout >
+      <Header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          backgroundColor: "#000"
+        }}
+        
+      >
+        <img src={logo} alt="logo" style={{ width: '150px', height: '50px', marginLeft: '-2%', marginRight: '2%' }} />
+        <Menu
+          mode="horizontal"
+          theme='dark'
+          defaultSelectedKeys={['1']}
+          items={items1}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            backgroundColor: "#000",
+          }}
+        />
+      </Header>
+      <Layout>
+        <Sider
+          width={200}
+          style={{
+          }}
         >
-          <IconButton
-            size="large"
-            edge="start"
-            color="inherit"
-            aria-label="open drawer"
-            sx={{ mr: 2 }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography
-            variant="h6"
-            noWrap
-            component="div"
-            sx={{ flexGrow: 1, display: { xs: 'none', sm: 'block' } }}
-          >
-            MUI
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyItems: 'end' }}>
-            <Search>
-              <SearchIconWrapper>
-                <SearchIcon />
-              </SearchIconWrapper>
-              <StyledInputBase
-                placeholder="Search…"
-                inputProps={{ 'aria-label': 'search' }}
-              />
-            </Search>
-            <IconButton
-              size="large"
-              aria-label="show 17 new notifications"
-              color="inherit"
-            >
-              <Badge badgeContent={17} color="error">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
-            <IconButton
-              size="large"
-              edge="end"
-              aria-label="account of current user"
-              aria-controls={menuId}
-              aria-haspopup="true"
-              onClick={handleProfileMenuOpen}
-              color="inherit"
-            >
-              <AccountCircle />
-            </IconButton>
-            <IconButton
-              size="large"
-              aria-label="show more"
-              aria-controls={mobileMenuId}
-              aria-haspopup="true"
-              onClick={handleMobileMenuOpen}
-              color="inherit"
-              sx={{ display: { xs: 'flex', md: 'none' } }}
-            >
-              <MoreIcon />
-            </IconButton>
-          </Box>
-        </Toolbar>
-      </AppBar>
-      {renderMobileMenu}
-      {renderMenu}
-    </Box>
+          <Menu
+            mode="inline"
+            defaultSelectedKeys={['1']}
+            defaultOpenKeys={['sub1']}
+            style={{
+              height: '100%',
+              borderRight: 0,
+              width: '100%',
+              fontSize: '12px',
+              backgroundImage: 'linear-gradient(to bottom, black , white)',
+            }}
+            items={items2}
+          />
+        </Sider>
+      </Layout>
+    </Layout>
   );
-}
-
-export default Header;
+};
+export default App;

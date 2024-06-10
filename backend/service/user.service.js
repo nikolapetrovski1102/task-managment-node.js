@@ -18,13 +18,14 @@ class UserService {
         try{
             const redisUsers = await redisClient.get('users');
 
-            if (redisUsers && true){
+
+            if (redisUsers && !newUserFlag){
                 return JSON.parse(redisUsers);
             }else{
                 const users = await User.findAll();
-                
+
                 newUserFlag = false;
-                const redisUsers = await redisClient.set('users', JSON.stringify(users));
+                await redisClient.set('users', JSON.stringify(users));
                 
                 return JSON.parse(users);
             }
@@ -37,9 +38,11 @@ class UserService {
     async login(email, password, remember_me) {
         try {
             const usersList = await this.list_all_users();
+
             for (const user of usersList) {
                 if (user.email === email && await bcrypt.compare(password, user.password)) {
                     const expiresIn = remember_me ? parseInt(process.env.TOKEN_EXPIRATION_REMEMBER_ME) : parseInt(process.env.TOKEN_EXPIRATION);
+
                     const token = await jwt.sign({ email: user.email, id: user.id }, process.env.SECRET_KEY, { expiresIn });
     
                     redisClient.set(token, user.id, 'EX', expiresIn);
@@ -68,8 +71,6 @@ class UserService {
     }
 
     async get_user_by_id(user_id) {
-    
-        console.log(user_id);
 
         try{
             const usersList = await this.list_all_users();
@@ -88,6 +89,21 @@ class UserService {
 
     }
 
+    async get_user_by_redis_token (user_token){
+        try{
+            const user_id = await redisClient.get(user_token);
+
+            const user = await this.get_user_by_id(parseInt(user_id));
+
+            if (user){
+                return user;
+            }
+        }
+        catch(err){
+            return null;
+        }
+    }
+
     async logout (token){
         try{
             const user_id = await redisClient.get(token);
@@ -97,6 +113,72 @@ class UserService {
                 return true;
             }
             return false;
+        }
+        catch(err){
+            return false;
+        }
+    }
+
+    async get_user_role(user_token){
+        try{
+            const user_id = await redisClient.get(user_token);
+
+            if (user_id){
+                const user = await this.get_user_by_id(parseInt(user_id))
+
+                return user.role;
+            }
+            return null;
+        }
+        catch(err){
+            return null;
+        }
+    }
+
+    async increese_current_tasks(user_id){
+        try{
+            const user = await this.get_user_by_id(user_id);
+
+            console.log('incrising current tasks');
+
+            user.currentTasks += 1;
+            await User.update(user, {where: {id: user.id} } )
+
+            newUserFlag = true;
+
+            return true;
+        }
+        catch(err){
+            return false;
+        }
+    }
+
+    async decreese_current_tasks(user_id){
+        try{
+            const user = await this.get_user_by_id(user_id);
+
+            user.currentTasks -= 1;
+            await User.update(user, {where: {id: user.id} } )
+
+            newUserFlag = true;
+
+            return true;
+        }
+        catch(err){
+            return false;
+        }
+    }
+
+    async increese_finished_tasks(user_id){
+        try{
+            const user = await this.get_user_by_id(user_id);
+
+            user.finishedTasks += 1;
+            await User.update(user, {where: {id: user.id} } )
+
+            newUserFlag = true;
+
+            return true;
         }
         catch(err){
             return false;

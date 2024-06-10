@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { LaptopOutlined, UserOutlined } from '@ant-design/icons';
-import { Layout, Menu, theme } from 'antd';
+import { Layout, Menu, theme, Tag } from 'antd';
 import logo from '../../../../images/Logo.png'
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import TaskAdd from './TaskAddForm';
 
 const { Header, Sider } = Layout;
@@ -19,14 +22,43 @@ const items1 = [
   },
 ]
   
+
+const FormDisabledDemo = () => {
+
+    const navigate = useNavigate();
+  
+    const [users, setUsers] = useState([]);
+    const [collapsed, setCollapsed] = useState(true);
+  
+    useEffect( () => {
+      const fetchUsers = async () => {
+        try {
+          const response = await axios.get(`${process.env.REACT_APP_API_URL}/list_all_users`, {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+            },
+          });
+          setUsers(response.data);
+        } catch (error) {
+          console.error('Error fetching users:', error);
+        }
+      };
+      fetchUsers();
+    }, [])
+  
+    const Logout = async () => {
+      localStorage.removeItem('access_token');
+      navigate('/')
+    }
+  
   const items2 = [
     {
       key: 'sub1',
       icon: React.createElement(UserOutlined),
       label: 'Profile',
       children: [
-        { key: '1', label: 'Logout' },
-        { key: '2', label: 'Details' },
+        { key: '1', label: <a onClick={Logout} >Logout</a> },
+        { key: '2', label: <a onClick={() => navigate(`/details/${localStorage.getItem('access_token')}`)} >Details</a>},
       ],
     },
     {
@@ -34,15 +66,11 @@ const items1 = [
       icon: React.createElement(LaptopOutlined),
       label: 'Team',
       children: [
-        { key: '5', label: 'Option 5' },
-        { key: '6', label: 'Option 6' },
-        { key: '7', label: 'Option 7' },
-        { key: '8', label: 'Option 8' },
+        ...users.map(user => ({ key: `user-${user.id}`, label: localStorage.getItem('user_role') == 'User' ? <p>{user.fullname}</p> : <a onClick={ () => navigate(`/user/table/${user.id}`) } >{user.fullname}</a> }))
       ],
     },
   ];
 
-const FormDisabledDemo = () => {
 const {
     token: { colorBgContainer },
     } = theme.useToken();
@@ -52,7 +80,7 @@ const {
       style={{
         display: 'flex',
         alignItems: 'center',
-        background: '#000 !important',
+        backgroundColor: "#000"
       }}
       
     >
@@ -64,24 +92,22 @@ const {
         style={{
           flex: 1,
           minWidth: 0,
+          backgroundColor: "#000"
         }}
       />
     </Header>
     <Layout>
       <Sider
-        width={200}
-        style={{
-          background: colorBgContainer,
-          height: '92vh',
-        }}
-      >
+          width={200}
+          collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}
+        >
         <Menu
           mode="inline"
-          defaultSelectedKeys={['1']}
-          defaultOpenKeys={['sub1']}
           style={{
             height: '100%',
             borderRight: 0,
+            width: '100%',
+            fontSize: '12px',
           }}
           items={items2}
         />

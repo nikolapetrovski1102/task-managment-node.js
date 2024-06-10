@@ -16,25 +16,24 @@ const items1 = [
   },
   {
       key: '2',
-      label: 'Completed tasks',
+      label: <a href='/completed/tasks' >Completed tasks</a>,
   },
 ]
 
 const App = () => {
 
   const navigate = useNavigate();
-
   const [users, setUsers] = useState([]);
+  const [collapsed, setCollapsed] = useState(true);
 
   useEffect( () => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get('http://cyberlink-001-site33.atempurl.com/list_all_users', {
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/list_all_users`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
         });
-        console.log(response.data);
         setUsers(response.data);
       } catch (error) {
         console.error('Error fetching users:', error);
@@ -55,7 +54,7 @@ const App = () => {
       label: 'Profile',
       children: [
         { key: '1', label: <a onClick={Logout} >Logout</a> },
-        { key: '2', label: 'Details' },
+        { key: '2', label: <a onClick={() => navigate(`/details/${localStorage.getItem('access_token')}`)} >Details</a>},
       ],
     },
     {
@@ -63,7 +62,7 @@ const App = () => {
       icon: React.createElement(LaptopOutlined),
       label: 'Team',
       children: [
-        ...users.map(user => ({ key: `user-${user.id}`, label: user.fullname }))
+        ...users.map(user => ({ key: `user-${user.id}`, label: localStorage.getItem('user_role') == 'User' ? <p>{user.fullname}</p> : <a onClick={ () => navigate(`/user/table/${user.id}`) } >{user.fullname}</a> }))
       ],
     },
   ];
@@ -72,43 +71,40 @@ const App = () => {
     token: { colorBgContainer },
   } = theme.useToken();
   return (
-    <Layout>
+    <Layout >
       <Header
         style={{
           display: 'flex',
           alignItems: 'center',
-          background: '#000 !important',
+          backgroundColor: "#000"
         }}
         
       >
         <img src={logo} alt="logo" style={{ width: '150px', height: '50px', marginLeft: '-2%', marginRight: '2%' }} />
         <Menu
-          theme="dark"
           mode="horizontal"
+          theme='dark'
           defaultSelectedKeys={['1']}
           items={items1}
           style={{
             flex: 1,
             minWidth: 0,
+            backgroundColor: "#000",
           }}
         />
       </Header>
       <Layout>
         <Sider
           width={200}
-          style={{
-            background: colorBgContainer,
-          }}
+          collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}
         >
           <Menu
             mode="inline"
-            defaultSelectedKeys={['1']}
-            defaultOpenKeys={['sub1']}
             style={{
               height: '100%',
               borderRight: 0,
               width: '100%',
-              fontSize: '12px'
+              fontSize: '12px',
             }}
             items={items2}
           />

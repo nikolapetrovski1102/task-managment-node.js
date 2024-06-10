@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PlusOutlined } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -39,14 +39,17 @@ const FormDisabledDemo = () => {
   const [componentDisabled, setComponentDisabled] = useState(false);
   const [users, setUsers] = useState([]);
   const [taskName, setTaskName] = useState('');
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState('Not started');
   const [priority, setPriority] = useState('');
+  const [issueType, setIssueType] = useState('');
   const [project, setProject] = useState('');
   const [assignTo, setAssignTo] = useState('');
-  const [dueDate, setDueDate] = useState('');
+  const [dueDate, setDueDate] = useState(null);
   const [description, setDescription] = useState('');
+  const [currentEnvironment, setCurrentEnvironment] = useState(null);
   const [file, setFile] = useState(null);
   const [spinning, setSpinning] = React.useState(false);
+  const taskNameRef = useRef(null);
   const colorList = [
     '#f56a00', '#7265e6', '#ffbf00', '#00a2ae', '#c30cba', 
     '#007bff', '#2db7f5', '#87d068', '#ff5500', '#f5222d', 
@@ -65,7 +68,7 @@ const FormDisabledDemo = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get('http://cyberlink-001-site33.atempurl.com/list_all_users', {
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/list_all_users`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
@@ -81,46 +84,44 @@ const FormDisabledDemo = () => {
     fetchUsers();
   }, []);
 
-  const onFinish = async () => {
-    console.log('Task Name:', taskName);
-    console.log('Status:', status);
-    console.log('Priority:', priority);
-    console.log('Project:', project);
-    console.log('Assign To:', assignTo);
-    console.log('Due Date:', dueDate);
-    console.log('Description:', description);
+  const addTask = async () => {
+    // if (!taskName || !priority || !project || !assignTo || issueType) {
+    //   return;
+    // }
 
-      if (!taskName || !status || !priority || !project || !assignTo || !dueDate) {
-        return;
-      }
-      const task = {
-        name: taskName,
-        status,
-        priority,
-        project,
-        assignedTo: assignTo,
-        assignedFrom: localStorage.getItem('access_token'),
-        dueDate,
-        description,
-        file,
-      };
-      setSpinning(true);
-      
-      await axios.post('http://cyberlink-001-site33.atempurl.com/createTask',
-      task,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-        },
-      }).then((response) => {
-        navigate('/tasks');
-        setSpinning(false);
-      }).catch((error) => {
-        setSpinning(false);
-        console.error('Error creating task:', error);
-      });
+    const task = {
+      name: taskName,
+      status,
+      priority,
+      project,
+      assignedTo: assignTo,
+      assignedFrom: localStorage.getItem('access_token'),
+      dueDate,
+      description,
+      currentEnvironment,
+      issueType,
+    };
+    setSpinning(true);
+    
+    await axios.post(`${process.env.REACT_APP_API_URL}/createTask`,
+    task,
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+      },
+    }).then((response) => {
+      navigate('/tasks');
+      setSpinning(false);
+    }).catch((error) => {
+      setSpinning(false);
+      console.error('Error creating task:', error);
+    });
+  }
 
+  const onFinish = async (values) => {
+    console.log(values);
   };
+
   return (
     <Layout
     style={{
@@ -153,26 +154,30 @@ const FormDisabledDemo = () => {
         width: '100%', height: '92vh', overflow: "scroll", margin: 'auto'
       }}
     >
-      <Form
-        labelCol={{
-          span: 4,
-        }}
-        wrapperCol={{
-          span: 14,
-        }}
-        layout="vertical"
-        disabled={componentDisabled}
-        style={{
-          width: '90%',
-          margin: '5% 10%',
-        }}
-        initialValues={{
-          remember: true,
-        }}
-        autoComplete="off"
-      >
-        <Form.Item label="Task Name" rules={[{ required: true, message: 'Please enter task name' }]} >
-          <Input onInput={(e) => setTimeout(() => setTaskName(e.target.value), 300)} />
+          <Form
+      onFinish={onFinish}
+      labelCol={{
+        span: 4,
+      }}
+      wrapperCol={{
+        span: 14,
+      }}
+      layout="vertical"
+      style={{
+        width: '90%',
+        margin: '5% 10%',
+      }}
+      initialValues={{
+        remember: true,
+      }}
+      autoComplete="off"
+    >
+        <Form.Item
+          label="Task Name"
+          name="taskName"
+          rules={[{ required: true, message: 'Please enter task name' }]}
+        >
+          <Input ref={taskNameRef} onInput={(e) => setTimeout(() => setTaskName(e.target.value), 300)} />
         </Form.Item>
         <Form.Item label="Status" >
           <Select onSelect={(value) => setTimeout(() => setStatus(value), 200)} >
@@ -181,7 +186,7 @@ const FormDisabledDemo = () => {
             <Select.Option value="Not started">Not started</Select.Option>
           </Select>
         </Form.Item>
-        <Form.Item label="Priority" rules={[{ required: true, message: 'Please select Priority' }]} >
+        <Form.Item label="Priority" name='priority' rules={[{ required: true, message: 'Please select Priority' }]} >
           <Select onSelect={(value) => setTimeout(() => setPriority(value), 200)} >
             <Select.Option value="P0"><Tag color="red">P0</Tag></Select.Option>
             <Select.Option value="P1"><Tag color="volcano">P1</Tag></Select.Option>
@@ -189,7 +194,14 @@ const FormDisabledDemo = () => {
             <Select.Option value="P3"><Tag color="green">P3</Tag></Select.Option>
           </Select>
         </Form.Item>
-        <Form.Item label="Project" rules={[{ required: true, message: 'Please select Project' }]} >
+        <Form.Item label="Issue Type" name='issueType' rules={[{ required: true, message: 'Please select Issue' }]} >
+          <Select onSelect={(value) => setTimeout(() => setIssueType(value), 200)} >
+            <Select.Option value="Bug"><Tag color="red">Bug</Tag></Select.Option>
+            <Select.Option value="Feature"><Tag color="green">Feature</Tag></Select.Option>
+            <Select.Option value="Task"><Tag color="gold">Task</Tag></Select.Option>
+          </Select>
+        </Form.Item>
+        <Form.Item label="Project" name='project' rules={[{ required: true, message: 'Please select Project' }]} >
           <Select onSelect={(value) => setTimeout(() => setProject(value), 200)} >
             <Select.Option value="Hello Help Me"> <Avatar style={{ marginBottom: '3px', marginRight: '5px' }} size={'small'} src={'https://ohanaone.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10415?size=medium'} ></Avatar> Hello Help Me</Select.Option>
             <Select.Option value="Axiom"> <Avatar style={{ marginBottom: '3px', marginRight: '5px' }} size={'small'} src={'https://ohanaone.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10419?size=medium'} ></Avatar> Axiom</Select.Option>
@@ -201,7 +213,7 @@ const FormDisabledDemo = () => {
             <Select.Option value="Paragon"> <Avatar style={{ marginBottom: '3px', marginRight: '5px' }} size={'small'} src={'https://ohanaone.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10408?size=medium'} ></Avatar> Paragon</Select.Option>
           </Select>
         </Form.Item>
-        <Form.Item label="Assign To" rules={[{ required: true, message: 'Please assign the task' }]}>
+        <Form.Item label="Assign To" name='assignTo' rules={[{ required: true, message: 'Please assign the task' }]}>
         <Select 
           style={{ color: '#000' }}
           onSelect={(value) => setTimeout(() => setAssignTo(value), 200)}
@@ -226,10 +238,17 @@ const FormDisabledDemo = () => {
         ))}
       </Select>
     </Form.Item>
-        <Form.Item label="Due Date" rules={[{ required: true, message: 'Please enter due date' }]} >
+    <Form.Item label="Current Environment" >
+          <Select onSelect={(value) => setTimeout(() => setCurrentEnvironment(value), 200)} >
+            <Select.Option value="Local">Local</Select.Option>
+            <Select.Option value="Production">Production</Select.Option>
+            <Select.Option value="Stage">Stage</Select.Option>
+          </Select>
+        </Form.Item>
+        <Form.Item label="Due Date" rules={[{ required: false, message: 'Please enter due date' }]} >
           <DatePicker onChange={(value) => setTimeout(() => setDueDate(value), 200)} />
         </Form.Item>
-        <Form.Item label="Description">
+        <Form.Item name='description' label="Description" rules={[{ required: false, message: 'Please provide description' }]} >
           <TextArea onInput={(e) => setTimeout(() => setDescription(e.target.value), 500)} rows={5} />
         </Form.Item>
         <Form.Item label="Upload" valuePropName="fileList" getValueFromEvent={normFile}>
@@ -258,7 +277,7 @@ const FormDisabledDemo = () => {
           span: 16,
         }}
       >
-        <Button onClick={onFinish} type="primary" htmlType="submit">
+        <Button onClick={addTask} type="primary" htmlType="submit">
           Submit
         </Button>
     </Form.Item>

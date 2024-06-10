@@ -1,4 +1,4 @@
-import  React, { useEffect, useState } from "react";
+import  React, { useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 
 import { Button, Form, Grid, Input, theme, Typography, Checkbox } from "antd";
@@ -25,26 +25,32 @@ export default function App() {
   } = theme.useToken();
   const { token } = useToken();
   const screens = useBreakpoint();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  const [email, setEmail] = React.useState('')
+  const [password, setPassword] = React.useState('')
+  const [error, setError] = React.useState('')
+  const [rememberMe, setRememberMe] = React.useState(true)
 
   const Authorize = () => {
-    axios.post('http://cyberlink-001-site33.atempurl.com/login', {
-        user: { email, password, remember_me: rememberMe }
-    }, { withCredentials: true }).then((response) => {
+    axios.post(`${process.env.REACT_APP_API_URL}/login`, {
+      user: {
+          email: email,
+        password: password,
+          remember_me: rememberMe
+      }
+  }).then((response) => {
+    console.log(response);
         if (response.data.access_token) {
-            localStorage.setItem('access_token', response.data.access_token);
-            navigate('/tasks');
+          localStorage.setItem('access_token', response.data.access_token)
+          navigate('/tasks')
         }
-    }).catch((error) => {
-        setError(error.response.data);
-    });
-};
+      }).catch((error) => {
+        console.log(error);
+          setError(error.response.data)
+      });
+  }
 
-  const onFinish = () => {
-    Authorize();
+  const onFinish = (values) => {
+    console.log("Received values of form: ", values);
   };
 
   const styles = {
@@ -80,56 +86,121 @@ export default function App() {
   };
 
   return (
-    <Layout style={{ padding: '0 24px 24px' }}>
-      <Breadcrumb style={{ margin: '16px 0' }}>
-        <Breadcrumb.Item>Home</Breadcrumb.Item>
-        <Breadcrumb.Item>Login</Breadcrumb.Item>
-      </Breadcrumb>
-      <Content style={{ margin: 0, minHeight: 280, background: colorBgContainer, borderRadius: borderRadiusLG }}>
-        <section style={styles.section}>
-          <div style={styles.container}>
-            <div style={styles.header}>
-              <svg width="25" height="20" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="0.464294" width="24" height="24" rx="4.8" fill="#1890FF" />
-                <path d="M14.8643 3.6001H20.8643V9.6001H14.8643V3.6001Z" fill="white" />
-                <path d="M10.0643 9.6001H14.8643V14.4001H10.0643V9.6001Z" fill="white" />
-                <path d="M4.06427 13.2001H11.2643V20.4001H4.06427V13.2001Z" fill="white" />
-              </svg>
+    <Layout
+    style={{
+      padding: '0 24px 24px',
+    }}
+  >
+    <Breadcrumb
+      style={{
+        margin: '16px 0',
+      }}
+    >
+      <Breadcrumb.Item>Home</Breadcrumb.Item>
+      <Breadcrumb.Item>Login</Breadcrumb.Item>
+    </Breadcrumb>
+    <Content
+      style={{
+        margin: 0,
+        minHeight: 280,
+        background: colorBgContainer,
+        borderRadius: borderRadiusLG,
+      }}
+    >
+    <section style={styles.section}>
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <svg
+            width="25"
+            height="20"
+            viewBox="0 0 25 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect x="0.464294" width="24" height="24" rx="4.8" fill="#1890FF" />
+            <path
+              d="M14.8643 3.6001H20.8643V9.6001H14.8643V3.6001Z"
+              fill="white"
+            />
+            <path
+              d="M10.0643 9.6001H14.8643V14.4001H10.0643V9.6001Z"
+              fill="white"
+            />
+            <path
+              d="M4.06427 13.2001H11.2643V20.4001H4.06427V13.2001Z"
+              fill="white"
+            />
+          </svg>
 
-              <Title style={styles.title}>Log In</Title>
-              <Text style={styles.text}>Welcome back to Marra Manage! Please enter your details below to sign in.</Text>
-            </div>
-            <Form
-              name="normal_login"
-              initialValues={{ remember: true }}
-              onFinish={onFinish}
-              layout="vertical"
-              requiredMark="optional"
-            >
-              {error && <Text type="danger">{error}</Text>}
-              <Form.Item
-                name="email"
-                rules={[{ type: "email", required: true, message: "Please input your Email!" }]}
-              >
-                <Input prefix={<MailOutlined />} placeholder="Email" onChange={(e) => setEmail(e.target.value)} />
-              </Form.Item>
-              <Form.Item
-                name="password"
-                rules={[{ required: true, message: "Please input your Password!" }]}
-              >
-                <Input.Password prefix={<LockOutlined />} placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
-              </Form.Item>
-              <Form.Item>
-                <Checkbox onChange={(e) => setRememberMe(e.target.checked)}>Remember me</Checkbox>
-                <a style={styles.forgotPassword} href="">Forgot password?</a>
-              </Form.Item>
-              <Form.Item style={{ marginBottom: "0px" }}>
-                <Button type="primary" htmlType="submit" block>Log in</Button>
-              </Form.Item>
-            </Form>
-          </div>
-        </section>
-      </Content>
+          <Title style={styles.title}>Log In</Title>
+          <Text style={styles.text}>
+            Welcome back to Marra Manage! Please enter your details below to
+            sign in.
+          </Text>
+        </div>
+        <Form
+          name="normal_login"
+          initialValues={{
+            remember: true,
+          }}
+          onFinish={onFinish}
+          layout="vertical"
+          requiredMark="optional"
+        >
+          {error && <Text type="danger">{error}</Text>}
+          <Form.Item
+            name="email"
+            rules={[
+              {
+                type: "email",
+                required: true,
+                message: "Please input your Email!",
+              },
+            ]}
+          >
+            <Input
+              prefix={<MailOutlined />}
+              placeholder="Email"
+              onInput={(e) => setTimeout(() => setEmail(e.target.value), 200)}
+            />
+          </Form.Item>
+          <Form.Item
+            name="password"
+            rules={[
+              {
+                required: true,
+                message: "Please input your Password!",
+              },
+            ]}
+          >
+            <Input.Password
+              prefix={<LockOutlined />}
+              type="password"
+              placeholder="Password"
+              onInput={(e) => setTimeout(() => setPassword(e.target.value), 200)}
+            />
+          </Form.Item>
+          <Form.Item>
+            <Form.Item name="remember" valuePropName="checked" noStyle>
+              <Checkbox onChange={ () => setTimeout( () => { setRememberMe(true) }, 200) } >Remember me</Checkbox>
+            </Form.Item>
+            <a style={styles.forgotPassword} href="">
+              Forgot password?
+            </a>
+          </Form.Item>
+          <Form.Item style={{ marginBottom: "0px" }}>
+            <Button 
+              onClick={Authorize}
+              block="true"
+              type="primary"
+              htmlType="submit">
+              Log in
+            </Button>
+          </Form.Item>
+        </Form>
+      </div>
+    </section>
+    </Content>
     </Layout>
   );
 }

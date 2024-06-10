@@ -1,20 +1,23 @@
 import dotenv from 'dotenv';
 dotenv.config();
-import Task from '../models/Tasks.mjs'
-import Redis from "ioredis";
+import Task from '../models/Tasks.mjs';
+import FinishedTasks from '../models/FinishedTasks.mjs';
 import Emailer from '../config/Emailer.js';
 import UserService from './user.service.js';
-import e from 'express';
+import jwt from 'jsonwebtoken';
+import Redis from "ioredis";
+import ejs from 'ejs';
+import path from 'path';
 
 const redisClient = new Redis(process.env.REDIS_URL);
 const emailer = new Emailer();
 const userService = new UserService();
+const __dirname = path.resolve();
 
 var taskCreated = false
 var taskDeleted = false
 
 class TaskService {
-
     async list_all_tasks() {
     
         try {
@@ -51,7 +54,7 @@ class TaskService {
             var taskListByUser = [];
     
             for (const task of tasks) {
-                if (task.assignedTo === parseInt(user_id)) {
+                if (task.assignedTo === parseInt(user_id) && task.status !== 'Finished') {
                     taskListByUser.push(task);
                 }
             }
@@ -71,13 +74,40 @@ class TaskService {
                 return null;
             }
             newTask.assignedFrom = parseInt(user_id);
-            await newTask.save();
+
+            const emailTo = await userService.get_user_by_id(parseInt(newTask.assignedTo))
+            const task_from = await userService.get_user_by_id(parseInt(newTask.assignedFrom))
+
             
-            const emailTo = await userService.get_user_by_id(newTask.assignedTo);
-
-            await emailer.sendMail(emailTo.email, 'Task Created', `A new task has been created for you: ${newTask.name}`, `<p>A new task has been created for you: ${newTask.name} you can check it <a href='http://localhost:3001/task/edit/${newTask.id}' >here</a> </p>`)
-
+            await newTask.save();
             taskCreated = true;
+            
+            userService.increese_current_tasks(newTask.assignedTo)
+            
+            var createdAt = newTask.createdAt;
+            createdAt = createdAt.toDateString() + ' ' + createdAt.toTimeString().split(' ')[0];
+
+            var dueDate = newTask.dueDate;
+            if (dueDate != null) dueDate = dueDate.toDateString();
+
+            const ejsData = {
+                emailTo: emailTo,
+                newTask: newTask,
+                task_from: task_from,
+                createdAt: createdAt,
+                dueDate: dueDate,
+                process: { env: { REACT_APP_CORS_LOCAL: process.env.REACT_APP_CORS_LOCAL } }
+            };
+
+            ejs.renderFile(__dirname + '\\config\\EmailTemplates\\CreateTaskTemplate.ejs', ejsData, async function(err, data){
+                if (err){
+                        console.log(err);
+                    }
+                    else{
+                        await emailer.sendMail(emailTo.email, `${newTask.project} [${newTask.id} - ${newTask.name}] Created with ${newTask.priority} priority`, data);
+                    }
+                });
+                    
             return newTask;
         }
         catch(err){
@@ -130,7 +160,7 @@ class TaskService {
           taskToEdit.assignedFrom = await redisClient.get(updatedTask.assignedFrom);
           taskToEdit.project = updatedTask.project;
           taskToEdit.status = updatedTask.status;
-      
+
           const updated = await Task.update(taskToEdit, { where: { id: task_id } })
           
           taskCreated = true;
@@ -182,6 +212,62 @@ class TaskService {
             return false;
         }
     } 
+
+    async finish_task(task_id, user) {
+        try {
+            const task = await Task.findByPk(task_id);
+
+            if (!task) return null;
+
+            const finished_task = {
+                task_id: task.id,
+                created_at: task.createdAt,
+                finished_at: new Date(),
+                finished_by: parseInt(user.id),
+            };
+
+            const return_task = await FinishedTasks.create(finished_task);
+
+            userService.increese_finished_tasks(finished_task.assignedTo)
+
+            if (return_task) {
+                return return_task;
+            }
+        } catch (err) {
+            console.log(err);
+            return null;
+        }
+    }
+
+    async completed_tasks(user_token) {
+        try {
+            const user_id = jwt.verify(user_token, process.env.SECRET_KEY).id;
+
+            const finished_tasks = await FinishedTasks.findAll({ where: { finished_by: user_id } });
+
+            for (const task of finished_tasks) {
+                const taskInfo = await Task.findByPk(task.task_id);
+                task.task_id = taskInfo;
+            }
+
+            return finished_tasks;
+        } catch (err) {
+            console.log(err);
+            return null;
+        }
+    }
+
+    async list_tasks_by_user_id_service(user_id){
+        try{
+            const tasks = await Task.findAll({ where: { assignedTo: user_id } });
+
+            return tasks;
+        }catch(err){
+            console.log(err);
+            return null;
+        }
+    }
+
 
 }
 

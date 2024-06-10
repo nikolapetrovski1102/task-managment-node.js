@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Task Created</title>
+    <style>
+        /* :root {
+           --avatar-size: 2.5rem;
+        } */
+        *{
+            font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans',sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol','Noto Color Emoji';
+        }
+        .circle {
+            border-radius: 50%;
+            height: 2.5rem;
+            text-align: center;
+            width: 2.5rem;
+        }
+        .initials {
+            color: rgb(233, 226, 233);
+            font-size: calc(2.5rem / 2);
+            line-height: 2;
+        }
+
+        #circle-1{background-color: #f56a00;} 
+        #circle-2{background-color: #7265e6;} 
+        #circle-3{background-color: #ffbf00;} 
+        #circle-4{background-color: #00a2ae;} 
+        #circle-5{background-color: #c30cba;} 
+        #circle-6{background-color: #007bff;}
+        #circle-7{background-color: #2db7f5;} 
+        #circle-8{background-color: #87d068;} 
+        #circle-9{background-color: #ff5500;} 
+        #circle-10{background-color: #f5222d;}
+    
+        div p{
+            margin-bottom: 1%;
+            font-size: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" >
+
+        <p>Hi <strong> <%= emailTo.fullname %> </strong> , <strong> <%= task_from.fullname %> </strong> created <%= newTask.type %> for you </p>
+
+        <p style="color: #696060; font-weight: 500; font-size: .8rem;" ><%= newTask.project %> / <%= newTask.id %></p>
+
+        <hr style="margin: .5% 0 1% 0; height: 1px; background-color: rgb(161, 161, 160); border: 1px solid rgb(161,161,160)" />
+
+        <p>
+            <a style="font-size: 20px; text-decoration: none; " href="<%= process.env.REACT_APP_CORS_LOCAL %>/task/details/<%= newTask.id %>">
+                <%= newTask.id %> - <%= newTask.name %>
+            </a>
+        </p>
+        
+        <div >
+
+            <p style="font-weight: 500; margin: 2% 0 2% 0; " ><%= newTask.type %> created</p>
+            
+            <div style="display: flex;">
+                <div id="circle-<%= task_from.id %>" class="circle">
+                    <span class="initials"> <%= task_from.fullname.split(' ')[0][0]%><%= task_from.fullname.split(' ')[1][0] %> </span>
+                </div>
+                <p style="margin: .6%; font-weight: 500; color: #4e4a4a; "><%= task_from.fullname %></p>
+            </div>
+
+            <div style="margin: 1% 0 3% 4%;">
+                    <p>Priority: <strong> <%= newTask.priority %></strong></p>
+                    <p>Type: <strong> <%= newTask.type %> </strong> </p>
+                    <p>Assignee: 
+                            <strong style="margin: .6%; font-weight: 500; color: #4e4a4a;"><%= task_from.fullname %></strong>
+                        </p>
+                    <p>Created: <strong style="margin: .6%; font-weight: 500; color: #4e4a4a;"><%= createdAt %></strong> </p>
+                    <p>Due Date: <strong style="margin: .6%; font-weight: 500; color: #4e4a4a;"><%= dueDate %></strong> </p>
+
+            </div>
+            
+            <p>Marra Manage</p>
+        </div>
+
+    </div>
+
+</body>
+</html>

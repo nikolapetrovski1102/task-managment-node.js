@@ -13,6 +13,8 @@ const sequelize = new Sequelize(env.DATABASE, env.DATABASE_USER, env.DATABASE_PA
 const priority = ['P0', 'P1', 'P2', 'P3'];
 const projects = ['Hello Help Me', 'Nikob', 'Axiom', 'Balkanea', 'ASK', 'Paragon', 'Reptil', 'Salesforce'];
 const status = ['Finished', 'In progress', 'On hold', 'Not started'];
+const environments = ['Production', 'Stage', 'Local'];
+const types = ['Bug', 'Feature', 'Task'];
 
 class Task extends Model {}
 
@@ -66,6 +68,20 @@ Task.init({
             isIn: [status]
         }
     },
+    currentEnvironment: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        validate: {
+            isIn: [environments]
+        }
+    },
+    type: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        validate: {
+            isIn: [types]
+        }   
+    }
 }, {
     sequelize,
     modelName: 'Task',

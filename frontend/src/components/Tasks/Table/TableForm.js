@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { renderMatches, useHistory, useNavigate } from 'react-router-dom';
 import { ExclamationCircleFilled, ReloadOutlined, DownOutlined } from '@ant-design/icons';
-import { Breadcrumb, Layout, theme, Modal, Divider, Table, Button, Input, Spin, Tag, Avatar, Dropdown, Space } from 'antd';
+import { Breadcrumb, Layout, theme, Modal, Divider, Table, Button, Input, Spin, Tag, Avatar, Badge } from 'antd';
 import axios from 'axios';
 
 const { Content } = Layout;
@@ -36,24 +36,6 @@ const columns = [
 ];
 
 const App = () => {
-
-  const task_statuses = [
-    {
-      label: <a href="https://www.antgroup.com">1st menu item</a>,
-      key: '0',
-    },
-    {
-      label: <a href="https://www.aliyun.com">2nd menu item</a>,
-      key: '1',
-    },
-    {
-      type: 'divider',
-    },
-    {
-      label: '3rd menu item',
-      key: '3',
-    },
-  ];
 
   const getColor = (priority) => {
     switch (priority) {
@@ -93,28 +75,61 @@ const App = () => {
     }
   };
 
-  useEffect(() => {
+  const getStatus = (status) => {
+    switch (status) {
+      case 'In progress':
+        return 'processing';
+      case 'On hold':
+        return 'default';
+      case 'Not started':
+        return 'warning';
+      default:
+        return 'error';
+    }
+  
+  }
+
+  useEffect( () => {
     setLoading(true);
-    axios.get('http://cyberlink-001-site33.atempurl.com/listTasksByUser', {
+      
+    const fetchUserRole = async () => {
+      try {
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/checkUserRole`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        localStorage.setItem('user_role', response.data);
+        setUserRole(response.data);
+      }
+      catch(error) {
+        console.error('Error checking user role:', error);
+      }
+    };
+    fetchUserRole();
+    axios.get(`${process.env.REACT_APP_API_URL}/listTasksByUser`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('access_token')}`
       }
     }).then((response) => {
-      console.log('Response data:', response.data);
-
+      // Map the response data to the desired format
       const tasks = response.data.tasks.map((task) => ({
-        proba: task.priority == 'P0' ? 'Priority' : '',
         key: task.id,
         taskName: task.name,
-        dueDate: task.dueDate.split('T')[0],
+        dueDate: task.dueDate != null ? task.dueDate.split('T')[0] : '',
         priority: <Tag color={getColor(task.priority)}>{task.priority}</Tag>,
-        project:  <p style={{ marginBottom: '0' }} > <Avatar style={{ marginBottom: '1px' }} size={'small'} src={getProject(task.project)} ></Avatar> {task.project} </p>,
-        status: task.status
+        project: <p style={{ marginBottom: '0' }}><Avatar style={{ marginBottom: '1px' }} size={'small'} src={getProject(task.project)}></Avatar> {task.project}</p>,
+        status: <Badge status={getStatus(task.status)} text={task.status} />
       }));
+  
+      const sortTasksByPriority = (a, b) => {
+        const priorityOrder = ['P0', 'P1', 'P2', 'P3']; // Define your priority order here
+        return priorityOrder.indexOf(a.priority.props.children) - priorityOrder.indexOf(b.priority.props.children);
+      };
+  
+      const sortedTasks = tasks.sort(sortTasksByPriority);
 
-      console.log(tasks);
-
-      setData(tasks);
+      setData(sortedTasks);
       setLoading(false);
     }).catch((error) => {
       console.log(error);
@@ -122,8 +137,8 @@ const App = () => {
         if (localStorage.getItem('access_token'))
           localStorage.removeItem('access_token');
         navigate('/');
-      setLoading(false);
       }
+      setLoading(false);
     });
   }, []);
 
@@ -133,14 +148,14 @@ const App = () => {
   } = theme.useToken();
   const [selectionType, setSelectionType] = useState('checkbox');
   const [selectedRow, setSelectedRow] = useState(null);
-  const [open, setOpen] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
-  const [modalText, setModalText] = useState('Content of the modal');
   const [loadings, setLoadings] = useState([]);
   const [data, setData] = useState([]);
   const [selectedRowEdit, setSelectedRowEdit] = useState(null);
   const [editDsiabled, setEditDisable] = useState(true);
+  const [selectedRowKey, setSelectedRowKey] = useState(null);
   const [deleteDisabled, setDeleteDisable] = useState(true);
+  const [userRole, setUserRole] = useState('');
   const [loading, setLoading] = useState(false);
 
   // Disable buttons when no row is selected
@@ -159,22 +174,31 @@ const App = () => {
       return newLoadings;
     })
 
-    axios.get('http://cyberlink-001-site33.atempurl.com/listTasksByUser', {
+    axios.get(`${process.env.REACT_APP_API_URL}/listTasksByUser`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('access_token')}`
       }
     }).then((response) => {
-
+  
+      // Map the response data to the desired format
       const tasks = response.data.tasks.map((task) => ({
         key: task.id,
         taskName: task.name,
-        dueDate: task.dueDate.split('T')[0],
+        dueDate: task.dueDate != null ? task.dueDate.split('T')[0] : '',
         priority: <Tag color={getColor(task.priority)}>{task.priority}</Tag>,
-        project: <p> <Avatar style={{ marginBottom: '3px', marginRight: '5px' }} size={'small'} src={'https://ohanaone.atlassian.net/rest/api/2/universal_avatar/view/type/project/avatar/10415?size=medium'} ></Avatar> task.project </p>,
-        status: task.status,
+        project: <p style={{ marginBottom: '0' }}><Avatar style={{ marginBottom: '1px' }} size={'small'} src={getProject(task.project)}></Avatar> {task.project}</p>,
+        status: task.status
       }));
+  
+      const sortTasksByPriority = (a, b) => {
+        const priorityOrder = ['P0', 'P1', 'P2', 'P3'];
+        return priorityOrder.indexOf(a.priority.props.children) - priorityOrder.indexOf(b.priority.props.children);
+      };
+  
+      const sortedTasks = tasks.sort(sortTasksByPriority);
 
-      setData(tasks);
+      setData(sortedTasks);
+
       // After the data is fetched, stop the loader
       setLoadings((prevLoadings) => {
             const newLoadings = [...prevLoadings];
@@ -203,7 +227,7 @@ const App = () => {
   const onSearch = (value) => {
     if (value === '') enterLoading(2);
     const filtered = data.filter((item) =>
-      item.taskName.toLowerCase().includes(value.toLowerCase())
+      item.key.toString().includes(value) || item.taskName.toLowerCase().includes(value.toLowerCase())
     );
     setData(filtered);
   };
@@ -211,7 +235,9 @@ const App = () => {
 
   // Delete button
   const showDeleteConfirm = () => {
+    
     if (!selectedRow) return;
+
     const taskNames = selectedRow.map((item) => item.taskName).join(', ');
     confirm({
       title: 'Are you sure delete this task?',
@@ -222,17 +248,16 @@ const App = () => {
       cancelText: 'No',
       async onOk() {
 
-        const ids = selectedRow.map((item) => item.key);
+          var ids = selectedRow.map((item) => item.key);
 
           try {
-            const response = await axios.post(`http://cyberlink-001-site33.atempurl.com/deleteTasks/`,
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/deleteTasks/`,
               ids,
               {
                 headers: {
                   Authorization: `Bearer ${localStorage.getItem('access_token')}`,
                 },
             });
-            console.log(response);
             if (response.status === 200)
               enterLoading(2)
           } catch (error) {
@@ -248,9 +273,12 @@ const App = () => {
   // Handle row selection
   const rowSelection = {
     onChange: (selectedRowKeys, selectedRows) => {
+      if (selectedRowKey != null) {
+        return;
+      };
+
       setSelectedRow(selectedRows);
 
-      // document.getElementById('delete_btn').disabled = 
       if (selectedRowKeys.length > 1){
         setEditDisable(true);
         setDeleteDisable(false);
@@ -267,37 +295,31 @@ const App = () => {
       
     },
     getCheckboxProps: (record) => ({
-      disabled: record.name === 'Disabled User',
-      name: record.name,
+      disabled: selectedRowKey !== null,
     }),
-  };
-  // end handle row selection
 
-  //Edit button
-  const showModal = () => {
-    setModalText('')
-    setOpen(true);
   };
-  const handleOk = () => {
-    setModalText('The modal will be closed after two seconds');
-    setConfirmLoading(true);
-    setTimeout(() => {
-      setOpen(false);
-      setConfirmLoading(false);
-    }, 2000);
-  };
-  const handleCancel = () => {
-    console.log('Clicked cancel button');
-    setOpen(false);
-  };
-  // end edit button
 
+  const handleRowClick = (record) => {
+    if (selectedRowKey === record.key){
+      setSelectedRow(null);
+      setSelectedRowKey(null);
+      setEditDisable(true);
+      setDeleteDisable(true);
+    }
+    else{
+      setEditDisable(false);
+      setDeleteDisable(false);
+      setSelectedRowKey(record.key);
+      setSelectedRow([record]);
+    }
+  }
 
   return (
     <Layout
     style={{
       padding: '0 24px 24px',
-      height: '92vh',
+      height: '93vh',
     }}
   >
     <Breadcrumb
@@ -309,7 +331,7 @@ const App = () => {
       <Breadcrumb.Item>Table</Breadcrumb.Item>
     </Breadcrumb>
     <Divider style={{ margin: '-.5% 0 1% 0' }} />
-    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '1%', borderTopLeftRadius: '15px', borderTopRightRadius: '15px' }}>
         <div style={{ width: '20%' }} > 
           <Button
             type="primary"
@@ -317,34 +339,20 @@ const App = () => {
             loading={loadings[2]}
             onClick={() => enterLoading(2)}
             style={{
-              margin: '0 1% 1% 0',
+              margin: '0 0% 0% 0%',
             }}
           >
           </Button>
-          <Button style={{ margin: '0 0 0% 5%' }} onClick={ () => navigate('/task/add') } type="primary">
-            Add
-          </Button>
+          {userRole === 'Admin' && 
+            <Button style={{ margin: '0 0 0% 5%' }} onClick={ () => navigate('/task/add') } type="primary">
+              Add
+            </Button>
+          }
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <Button disabled={editDsiabled} id='edit_btn' type="primary" onClick={ () => navigate(`/task/edit/${selectedRow[0].key}`)}>
             Edit
           </Button>
-          <Modal
-            title="Title"
-            open={open}
-            onOk={handleOk}
-            confirmLoading={confirmLoading}
-            onCancel={handleCancel}
-          >
-              {selectedRow ? (
-                <div>
-                  <h3>Selected Task ID: {selectedRow.key}</h3>
-                  <Input placeholder="Basic usage" value={selectedRow.taskName}/>
-                </div>
-              ) : (
-                <p>No task selected</p>
-              )}
-          </Modal>
           <Button disabled={deleteDisabled} id='delete_btn' onClick={showDeleteConfirm} type="dashed" danger>
             Delete
           </Button>
@@ -355,8 +363,7 @@ const App = () => {
       style={{
         margin: 0,
         minHeight: 280,
-        background: colorBgContainer,
-        borderRadius: borderRadiusLG,
+        borderRadius: '15px',
       }}
     >
     <div>
@@ -366,7 +373,6 @@ const App = () => {
           type: selectionType,
           ...rowSelection,
         }}
-        style={{ cursor: 'pointer' }}
         size='small'
         columns={columns}
         dataSource={data}
@@ -376,12 +382,14 @@ const App = () => {
               navigate(`/task/details/${record.key}`);
             },
             onClick: () => {
-              setSelectedRow(record.key);
+              handleRowClick(record);
             },
             style: {
-              backgroundColor: selectedRow === record.key ? '#f5f5f5' : '',
+              color: selectedRowKey === record.key ? 'white' : '',
+              backgroundColor: selectedRowKey === record.key ? '#333' : '',
               cursor: 'pointer',
             },
+            className: selectedRowKey === record.key ? 'selected-row' : '',
           };
         }}
         pagination={{

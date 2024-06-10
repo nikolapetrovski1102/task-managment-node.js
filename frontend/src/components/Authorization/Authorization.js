@@ -35,6 +35,7 @@ const App = () => {
         style={{
           display: 'flex',
           alignItems: 'center',
+          backgroundColor: "#000"
         }}
       >
         <img src={logo} alt="logo" style={{ width: '150px', height: '50px', marginLeft: '-2%', marginRight: '2%' }} />
@@ -45,6 +46,7 @@ const App = () => {
           style={{
             flex: 1,
             minWidth: 0,
+            backgroundColor: "#000"
           }}
         />
       </Header>
